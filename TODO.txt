@@ -1,0 +1,4 @@
+HW: Python (CPU) vs MXL vs PyObjC Metal vs Numba
+
+MXL: Apple CPU
+MSL: Apple GPU
