@@ -314,6 +314,7 @@ def run_pipeline(x, y, p, t, actual_duration, cfg: PipelineConfig, run_title="DS
 if __name__ == "__main__":
     h5_path = Path("/run/media/chase-darlington/Extreme SSD/mocap-6dof-events_left.h5").resolve()
     if not h5_path.exists():
+
         h5_path = Path("~/Downloads/mocap-6dof-events_left.h5").expanduser().resolve()
 
     base_cfg = PipelineConfig()
@@ -321,8 +322,8 @@ if __name__ == "__main__":
 
     # Define Parameter Grid for Sequential Sensitivity Sweeps
     experiments = [
-        # Baseline Run
-        ("Baseline (Default Params)", replace(base_cfg)),
+    # #   # Baseline Run
+    # #   ("Baseline (Default Params)", replace(base_cfg)),
 
         # Tile Size Sensitivity (Spatial granularity & PCA scope)
         ("Tile Size = 80", replace(base_cfg, tile_size=80)),
@@ -330,9 +331,9 @@ if __name__ == "__main__":
 
         # Minimum Segment Span Sensitivity (Rejecting short stubby clusters)
         ("Min Span = 0.03m (3cm)", replace(base_cfg, min_segment_span=0.03)),
-        ("Min Span = 0.10m (10cm)", replace(base_cfg, min_segment_span=0.10)),
-        ("Min Span = 0.20m (20cm)", replace(base_cfg, min_segment_span=0.20)),
-        ("Min Span = 0.30m (30cm)", replace(base_cfg, min_segment_span=0.30)),
+        ("Min Span = 0.10m (10cm)", replace(base_cfg, min_segment_span=0.06)),
+        ("Min Span = 0.20m (20cm)", replace(base_cfg, min_segment_span=0.09)),
+        ("Min Span = 0.30m (30cm)", replace(base_cfg, min_segment_span=0.12)),
 
         # Maximum DSU Gap Distance Sensitivity (Stitching range)
         ("Max Gap = 0.06m", replace(base_cfg, max_gap_dist=0.06)),
