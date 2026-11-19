@@ -15,13 +15,29 @@ in `live_video_dsu_tracker.py`.
 
 
 ## OBJECTIVE OF THIS PROJECT
-Illustrate the capabilities and drawbacks with asynchronous, parallel event camera processing  
+Illustrate the capabilities and drawbacks with asynchronous, parallel event camera processing. Triangulate depth via closest approach with calibration, IMU pose, and asynchronous event camera data (coordinates constrained to edges of distinct intensity differentials) and rendering XYZt voxel point cloud over the duration of 6dof capture. 
 
 ## ABOUT THE TUM VIE DATASET
 https://cvg.cit.tum.de/data/datasets/visual-inertial-event-dataset  
+
+(2) Prophesee Gen4-CD Event Cameras: async, ~1MP 
+
+(2) Global Shutter Visual Cameras: 20 Hz, 1MP grayscale images, 3.2ms exposure
+
+(1) Inertial Measurement Unit: 200 Hz, 6-axis IMU, 3-axis linear acceleration and angular velocity
+
+(1) External Motion Capture System (Vicon/Qualisys): up to 120 Hz, 6-DoF rigid-body poses
+
 **hdf5, compressed bit-stream** for left and right event cameras: *x y t p* where polarity (p) subject to the formula below  
+
 **imu_data.txt** 200 Hz linear/angular rate + temp: *time(us); gx gy gz (rad/s); ax ay az (m/s^2); temp (C)*  
+
 **mocap_data.txt** 120 Hz position: *time(us); px py pz; qx qy qz qw*
+
+**camera-calibrationB.json** intrinsics of all four cameras as well as the extrinsics T_imu_cam between camera N and imu, where N = {left visual camera, right visual camera, left event camera, right event camera}: *6-DoF px py pz qx qy qz qw transformation from cam to IMU, fx fy focal length, cx cy principal point, k1..k4 barrel distortion, accel_noise_std gyro_noise_std accel_bias_std gyro_bias_std calib_accel_bias calib_gyro_bias, and HW clock latency*
+
+**mocap-imu-calibrationB.json** extrinsics T_mocap_world T_imu_marker between the mocap poses and imu poses *translation: qx qy qz qw and mocap_to_imu_offset_ns mocap_time_offset_ns*
+
 
 ### Continuous Log-Intensity Manifold
 Analog logarithmic circuit continuously compresses dynamic range into a log-intensity signal:
@@ -57,6 +73,31 @@ $p_k = -\operatorname{sgn}\big(\nabla L(\mathbf{u}_k) \cdot \mathbf{v}(t_k)\big)
 
 ## ALGORITHM DESIGN OVERVIEW
 
+### Calibration & Rectification
+
+Calibrate left and right event cameras from physical sensor parameters: intrinsics (barrel distortion, k2 and k3), extrinsics (6-DoF baseline translation and relative rotation between left and right event cameras, cam2 and cam3), and temporal offsets (cam_time_offset_ns, mocap_time_offset_ns).
+
+$x_d = \frac{x - c_x}{f_x}, \quad y_d = \frac{y - c_y}{f_y}, \quad r_d = \sqrt{x_d^2 + y_d^2}$
+
+Rectify using calibrated parameters to re-project left/right camera planes onto common virtual coplanar image plane (parallel optical axes and aligned horizontal epipolar scanlines).
+
+(1) Parse Calibration and Compute Relative Stereo Pose Offline, (2) Undistort Kannala-Brandt Fisheye, (3) Compute rectifying rotation matrices, (5) shift event camera timestamps by cam_time_offset_ns and MoCap timestamps by mocap_to_imu_offset_ns + mocap_time_offset_ns, (6) 
+
+- Parse calibration.json (cam2 & cam3) and mocap_calibration.json
+- Build 1280 x 720 undistortion + rectification LUTs using Newton-Raphson on kb4 (k1..k4)
+- Replace raw pixel coordinates with LUT-rectified rays and align timestamps using ns offsets
+
+### Triangulate
+Filter matches along horizontal rectified scanlines and triangulate via Closest Approach
+
+WHATS MISSING
+
+{USING SVD, CODE IN PARALLEL FOR M6 APPLE COMPUTE}
+
+queue by time into 5 ms windows -> associate different camera frames within time window -> compute relative pose (Rotation + Translation) -> Compute Essential Matrix -> Rectify/Match -> Closest Approach Z calculation
+
+Calibrate -> Epipolar Rectify -> Essential Fundamental Matrix -> Optimization (Closest Approach)
+
 ### Spatial Voxel Accumulation From Asynchronous Event Camera Stream > Voxel Grid V(x,y,t) 
 Discretize a rolling time window $\Delta T$ into $B$ discrete temporal bins. Each event $(x_k, y_k, t_k, p_k)$    contributes to the grid $V \in \mathbb{R}^{B \times H \times W}$ via trilinear interpolation across time:
 
@@ -69,61 +110,3 @@ $V(b, y_k, x_k) {+}= p_k \cdot (1 - (t_k^* - b))$
 $V(b+1, y_k, x_k) {+}= p_k \cdot (t_k^* - b)$
 
 **note:** accumulate this in parallel using atomic float adds into a linear buffer sized $B \times H \times W$.
-
-### Spatiotemporal Gradient Tensor > 3D Structure Tensor
-To detect corners, compute the spatial and temporal gradients within the voxel volume. For each temporal slice $b$, compute the spatial derivatives using $3 \times 3$ Sobel or central-difference kernels:
-$I_x = \frac{\partial V}{\partial x}, \quad I_y = \frac{\partial V}{\partial y}, \quad I_t = \frac{\partial V}{\partial t}$\
-Assemble the 2D spatial structure tensor (or 3D spatio-temporal structure tensor) over a local Gaussian neighborhood $W$ of size $w \times w$:\
-$M = \sum_{(u, v) \in W} w(u, v) \begin{bmatrix} I_x^2 & I_x I_y \\ I_x I_y & I_y^2 \end{bmatrix}$\
-
-### Corner/Arc Evaluation
-Evaluate the corner response $R$ per pixel per slice using the Harris criterion:
-$$R(x, y, b) = \det(M) - \kappa \cdot (\text{tr}(M))^2$$  
-Where:
-$$\det(M) = M_{00} M_{11} - M_{01}^2$$
-$$\text{tr}(M) = M_{00} + M_{11}$$
-$$\kappa \in [0.04, 0.06]$$ 
-A cell is a corner candidate if $R(x, y, b) > \tau$  , where $\tau$ is an empirical threshold tuned to filter out straight edge segments.
-
-### Suppression
-Raw responses produce dense clusters around features. Apply a $3 \times 3$ (or $5 \times 5$) window suppression kernel:
-A candidate at $(x, y, b)$   survives if:
-
-$$R(x, y, b) = \max_{(dx, dy) \in [-1, 1]} R(x + dx, y + dy, b)$$    
-Compact the surviving indices into a contiguous list of corner coordinates:
-
-$$\mathcal{C} = \{(x_i, y_i, b_i, R_i)\}$$   
-
-Parallel Implementation: Use an atomic counter or prefix sum (stream compaction) to write the surviving points into a compact output buffer.
-
-### Rasterization
-To visualize the detected corners, render them over a background image (either an integrated time-surface or an accumulated grayscale frame):
-Background Canvas: Render the active slice $V(b, :, :)$   normalized to $[0, 1]$  as a grayscale texture.
-Instanced Splatting:
-Treat each corner in $\mathcal{C}$ as an instance.
-Draw a small circle, crosshair, or quad at screen-space position $(x_i, y_i)$ .
-Encode the polarity, timestamp, or corner response score $R_i$ into the vertex color:
-Green/Cyan: High confidence corner.
-Red/Blue: Positive vs. negative polarity dominance.
-Alpha Blending: Use additive or standard alpha blending (src_alpha, 1 - src_alpha) to composite the markers over the background canvas.
-
-###  Cache Blocking 
-Purpose: tiling over 2D sensor focal plane enables parallel **Map pattern**, decoupling camera reference frame and world reference frame coordinate systems.
-*FLAG: without tiling, program shifts away from arithmetic intensity / ridge point 
-
-
-
-
-
-### WORK IN PROGRESS
-
-bit stream -> spatiotemporal voxels
-
-
-
-establish starting view plane, collecting points (async) on that coordinate frame
-identify candidate 2D lines
-establish fitment probabilities
-identify corners
-wrap-merge
-convert to vertex buffer object
