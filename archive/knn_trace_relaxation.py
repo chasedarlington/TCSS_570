@@ -10,7 +10,7 @@ from scipy.spatial import cKDTree
 # -------------------------------------------------------------------------
 # 1. Event Ingestion & Back-Projection
 # -------------------------------------------------------------------------
-h5_path = Path("~/Downloads/mocap-6dof-events_left.h5").expanduser().resolve()
+h5_path = Path("~/Documents/git/TCSS_570/mocap-6dof-events_left.h5").expanduser().resolve()
 
 with h5py.File(h5_path, "r") as f:
     events_grp = f["events"] if "events" in f else f["events_left"]

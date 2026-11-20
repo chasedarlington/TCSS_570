@@ -222,9 +222,9 @@ def load_dataset(h5_path: Path, cfg: PipelineConfig):
 # SINGLE RUN EXECUTOR (LIVE OR HEADLESS BENCHMARK)
 # =============================================================================
 def run_pipeline(x, y, p, t, actual_duration, cfg: PipelineConfig, run_title="DSU Tracker", gui=True):
-    current_t = t[0]
-    t_end_val = t[-1]
-    t_start_val = t[0]
+    current_t = t[0] # time of first elem
+    t_end_val = t[-1] # time of last elem
+    t_start_val = t[0] # window start (time of first elem)
 
     if gui:
         plt.ion()
@@ -232,14 +232,15 @@ def run_pipeline(x, y, p, t, actual_duration, cfg: PipelineConfig, run_title="DS
         ax_3d = fig.add_subplot(1, 1, 1, projection="3d")
         plt.show(block=False)
 
-    frame_count = 0
-    total_lines_detected = 0
+    frame_count = 0  # frame counter for 3D plot refresh
+    total_lines_detected = 0 
     start_wall_time = time.time()
 
+    # discretize rolling time window into B discrete temporal bins    
     while current_t + cfg.window_us <= t_end_val:
         idx_start = np.searchsorted(t, current_t)
         idx_end = np.searchsorted(t, current_t + cfg.window_us)
-
+        
         x_w = x[idx_start:idx_end]
         y_w = y[idx_start:idx_end]
         p_w = p[idx_start:idx_end]
@@ -249,6 +250,7 @@ def run_pipeline(x, y, p, t, actual_duration, cfg: PipelineConfig, run_title="DS
 
         if gui:
             lin_idx = y_w * cfg.width + x_w
+            # flatten 3d dimensions
             voxel_1d = np.bincount(lin_idx, weights=p_w, minlength=cfg.height * cfg.width)
             voxel_2d = voxel_1d.reshape((cfg.height, cfg.width))
 
