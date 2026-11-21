@@ -1,0 +1,69 @@
+HW: Python (CPU) vs MXL vs PyObjC Metal vs Numba
+
+MXL: Apple CPU
+MSL: Apple GPU
+
+-----------------------------------------
+# 3D RENDERING - depth estimation (pose required)
+-----------------------------------------
+
+## MC-EMVS - Multi-Camera Event-based Multi-View Stereo
+[STEREO-E][CPU] 			https://github.com/tub-rip/dvs_mcemvs
+
+## E2Depth - Learning Monocular Dense Depth from Events
+[DENSE][MONO-E][GPU] 			https://github.com/uzh-rpg/rpg_e2depth
+
+## SE-CFF - Stereo Event-based Depth Estimation via Concentration-Net and Future-Frame Prediction
+[DENSE][STEREO-E][GPU] 			https://github.com/nameless-repo/SE-CFF
+
+## E-NeRF - Event-based Neural Radiance Fields 
+[DENSE][MONO-E][GPU]			https://github.com/wengflow/robust-e-nerf/tree/main 
+
+## GPERT - Geometric-Photometric Event-based 3D Gaussian Ray Tracing
+[DENSE][MONO-E][GPU]			https://github.com/e3ai/gpert
+
+
+-----------------------------------------
+# VISUAL ODOMETRY - pose estimation (incl. sparse depth)
+-----------------------------------------
+
+## DEVO - Deep Event Visual Odometry, Learned Monocular VO
+[MONO-E][GPU] 			https://github.com/tum-vision/DEVO
+
+## DEIO - Deep Event Inertial Odometry, Learned Monocular VIO	
+[MONO-E/IMU][GPU] 		https://github.com/arclab-hku/DEIO
+
+## EDS - Event-aided Direct Sparse Odometry
+[MONO-E/STEREO-V][CPU] 		https://github.com/uzh-rpg/EDS](https://github.com/uzh-rpg/EDS
+
+## ESVIO - Event-based Stereo Visual-Inertial Odometry	
+[STEREO-E/IMU][CPU] 		https://github.com/KwanWaiPang/ESVIO
+
+## ESVO2 - Event-based Stereo Visual Odometry (2025)
+[STEREO-E][CPU]			https://github.com/tub-rip/ESVO2		
+
+## ES-PTAM - (2024)
+[STEREO-E][CPU]			https://github.com/tub-rip/
+
+## PL-EVIO - Point-and-Line Event-Visual-Inertial Odometry	
+[MONO-E/STEREO-V/IMU][CPU]	https://github.com/HKUST-Aerial-Robotics/PL-EVIO	
+
+
+-----------------------------------------
+# OPTICAL FLOW ESTIMATION - flow estimation
+-----------------------------------------
+
+## E-RAFT - Dense Optical Flow from Event Cameras (2021)
+[DENSE][MONO-E][GPU]			https://github.com/uzh-rpg/E-RAFT
+
+## Event Based Optical Flow (2022)
+[DENSE][MONO-E][CPU]			https://github.com/tub-rip/event_based_optical_flow/tree/main 
+
+## TMA - Temporal Motion Aggregation (TMA) for Event-based Optical Flow (2023)
+[DENSE][MONO-E][GPU]			https://github.com/ispc-lab/TMA
+
+## B-Flow - Continuous-Time Optical Flow from Events (2024)		*******************************************
+[CONT][MONO-E][GPU]			https://github.com/uzh-rpg/bflow
+	
+
+Walk me through git clone and running these programs with office-maze-events from the TUM VIE dataset. Assume I have none of the dependencies installed on my Mac mini M6. 

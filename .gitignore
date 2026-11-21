@@ -1,2 +1,5 @@
 # Local mocap datasets and directories
-mocap-*
+/tum-vie-data
+/mocap*
+!/mocap-folder/imu_data.txt
+!/mocap-folder/mocap_data.txt

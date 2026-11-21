@@ -4,7 +4,7 @@ import numpy as np
 import h5py
 import pandas as pd
 from aiohttp import web
-from archive.power_metrics import MacHardwareMonitor
+from DE.archive.power_metrics import MacHardwareMonitor
 
 # TUM-VIE resolution is 1280x720 (Prophesee Gen4)
 W, H = 1280, 720
