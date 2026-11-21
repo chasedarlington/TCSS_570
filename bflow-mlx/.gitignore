@@ -1,0 +1,54 @@
+# Local configuration and credentials
+.env
+.env.*
+.netrc
+.git-credentials
+credentials.json
+*.key
+*.pem
+
+# Native build products and dependency checkouts
+/build/
+/build-*/
+/cmake-build-*/
+/CMakeCache.txt
+/CMakeFiles/
+/Makefile
+/build.ninja
+/cmake_install.cmake
+/compile_commands.json
+/.ninja_deps
+/.ninja_log
+/bflow-mlx
+/upstream-bflow/
+/hdf5-blosc/
+*.o
+*.a
+*.dylib
+*.so
+*.metallib
+
+# Offline export environments and caches
+/.export-env/
+/.venv/
+/venv/
+__pycache__/
+*.py[cod]
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Checkpoints, exported tensors, and HDF5 recordings
+*.ckpt
+*.safetensors
+*.npy
+*.npz
+*.h5
+*.hdf5
+
+# Local temporary files
+.DS_Store
+*.log
+*.swp
+*.tmp
+*~
